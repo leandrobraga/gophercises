@@ -1,13 +1,19 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
+	"os"
 
 	urlshortener "github.com/leandrobraga/gophercises/url-shortener"
 )
 
 func main() {
+	yamlFile := flag.String("yaml", "", "yaml file with path and url fields")
+	_ = yamlFile
+	flag.Parse()
+
 	mux := defaultMux()
 
 	// Build the MapHandler using the mux as the fallback
@@ -19,13 +25,23 @@ func main() {
 
 	// Build the YAMLHandler using the mapHandler as the
 	// fallback
-	yaml := `
+	var yaml []byte
+	if *yamlFile != "" {
+		file, err := os.ReadFile(*yamlFile)
+		if err != nil {
+			panic(err)
+		}
+		yaml = file
+	} else {
+		yaml = []byte(`
 - path: /urlshort
   url: https://github.com/gophercises/urlshort
 - path: /urlshort-final
   url: https://github.com/gophercises/urlshort/tree/solution
-`
-	yamlHandler, err := urlshortener.YAMLHandler([]byte(yaml), mapHandler)
+`)
+	}
+
+	yamlHandler, err := urlshortener.YAMLHandler(yaml, mapHandler)
 	if err != nil {
 		panic(err)
 	}
