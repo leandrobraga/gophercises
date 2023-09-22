@@ -1,6 +1,7 @@
 package urlshortener
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"gopkg.in/yaml.v3"
@@ -39,7 +40,27 @@ func parseYAML(data []byte) ([]pathUrl, error) {
 	return pathUrls, nil
 }
 
+func JSONHandler(jsn []byte, fallback http.Handler) (http.HandlerFunc, error) {
+	pathUrls, err := parseJSON(jsn)
+	if err != nil {
+		return nil, err
+	}
+	pathToUrls := make(map[string]string)
+	for _, pu := range pathUrls {
+		pathToUrls[pu.Path] = pu.Url
+	}
+	return MapHandler(pathToUrls, fallback), nil
+}
+
+func parseJSON(data []byte) ([]pathUrl, error) {
+	var pathUrls []pathUrl
+	if err := json.Unmarshal(data, &pathUrls); err != nil {
+		return nil, err
+	}
+	return pathUrls, nil
+}
+
 type pathUrl struct {
-	Path string `yaml:"path"`
-	Url  string `yaml:"url"`
+	Path string `yaml:"path" json:"path"`
+	Url  string `yaml:"url" json:"url"`
 }
